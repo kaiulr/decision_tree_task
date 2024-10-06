@@ -19,7 +19,6 @@ def load_model(model_path):
 def classification_results(df, output_path):
     df.to_csv(output_path, index=False)
 
-<<<<<<< HEAD
 ## Defining functions to find all important decision tree metrics
 # Accuracy = TP+TN / TP+TN+FN+FP
 def accuracy_score(y_true, y_pred):
@@ -72,20 +71,6 @@ def save_metrics(actual, predicted, output_path):
 
 def Predict(tree, data):
     return tree.predict(data)
-=======
-
-
-# Functions to calculate predictions using the coefficients
-def Bias_Term(x): ## Offsets entire data by intercept (Same as in train_model.py)
-    if (len(x.shape)==1):
-        x=x[:,np.newaxis]
-    b=np.ones((x.shape[0],1)) # Creating a new column of ones
-    x=np.concatenate((b,x), axis=1) # Concatenating column to feature-matrix
-    return x
-
-def Predict(X,b):
-    return (np.dot(X,b)) # Equation (43) from PDF (multiplying features with coefficients)
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
 
 if __name__ == "__main__":
     
@@ -101,13 +86,8 @@ if __name__ == "__main__":
 
     # Load saved model from path
     model_data = load_model(args.model_path)
-<<<<<<< HEAD
     tree  = model_data['tree']
     columns = model_data['columns']
-=======
-    coefficients = model_data['coefficients']
-    feature_names = model_data['features']
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
 
     # Load data from the specified path
     # output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data')
@@ -118,7 +98,6 @@ if __name__ == "__main__":
     data = pd.read_csv(processed_data_dir)
     
     # Splitting the features and output variable (fuel consumption)
-<<<<<<< HEAD
     data = data[columns]
     we=data.to_numpy()
     we=we.astype(np.float64)
@@ -127,24 +106,6 @@ if __name__ == "__main__":
 
     # Make predictions
     predicted_values = Predict(tree, X)
-=======
-    X = data[feature_names].values
-    print(X)
-    X_bias = Bias_Term(X)
-    y = data['FUEL CONSUMPTION'].values
-
-    # Make predictions
-    predicted_values = Predict(X_bias, coefficients)
-
-    def metrics(actual, predicted): # Calculating r2, MSE, RMSE from 2 arrays: predicted values and actual.
-        tss = np.sum((actual - np.mean(actual))**2)
-        ssr = np.sum((predicted - actual)**2)
-        r2 = 1 - (ssr / tss)
-        mse = np.mean((predicted - actual)**2)
-        return mse, np.sqrt(mse), r2
-
-    mse, rmse, r2 = metrics(y, predicted_values)
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
 
     # Save predictions to CSV
     predictions_df = pd.DataFrame({
@@ -152,17 +113,10 @@ if __name__ == "__main__":
         'Predicted': predicted_values
     })
 
-<<<<<<< HEAD
     classification_results(predictions_df, args.predictions_output_path)
 
     # Save metrics to the metrics.txt file)
     save_metrics(y, predicted_values, args.metrics_output_path)
-=======
-    regression_results(predictions_df, args.predictions_output_path)
-
-    # Save metrics to the metrics.txt file)
-    save_metrics(mse, r2, args.metrics_output_path)
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
 
     print(f"Predictions saved to {args.predictions_output_path}")
     print(f"Metrics saved to {args.metrics_output_path}")
