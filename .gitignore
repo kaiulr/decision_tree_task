@@ -1,4 +1,8 @@
 # Ignore input data file
+<<<<<<< HEAD
 fraud_train.csv
 training_data.csv
 /data/training_data.csv
+=======
+fraud_train.csv
+>>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
