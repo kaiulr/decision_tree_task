@@ -4,10 +4,7 @@ import argparse
 import pickle
 import os
 from data_preprocessing import preprocessing
-<<<<<<< HEAD
 # from train_model import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-=======
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
 
 # Since predict.py will parse user-inputted arguments, defining functions which take each command line argument as input
 
