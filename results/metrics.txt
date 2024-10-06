@@ -1,18 +1,8 @@
 Classification Metrics:
-<<<<<<< HEAD
-Accuracy: 0.9989675053718228
-Precision: 0.6946186860349951
-Recall: 0.36182287188306106
-F1-Score: 0.4758028041610131
+Accuracy: 0.9990147521949514
+Precision: 0.7232415902140673
+Recall: 0.36525096525096523
+F1-Score: 0.48537711646998455
 Confusion Matrix:
-[[[4483356], [925]],
-[[3711], [2104]]]
-=======
-Accuracy: nan
-Precision: 0
-Recall: 0
-F1-Score: 0
-Confusion Matrix:
-[[[0], [0]],
-[[0], [0]]]
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
+[[[1016542], [181]],
+[[822], [473]]]

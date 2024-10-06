@@ -4,14 +4,18 @@ import argparse
 import pickle
 import os
 from data_preprocessing import preprocessing
+from collections import Counter
+from itertools import combinations
+
+# from train_model import DecisionTreeClassifierBinary
 # from train_model import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 # Since predict.py will parse user-inputted arguments, defining functions which take each command line argument as input
 
 def load_model(model_path):
     with open(model_path, 'rb') as f:
-        regression_model = pickle.load(f)
-    return regression_model
+        classification_model = pickle.load(f)
+    return classification_model
 
 def classification_results(df, output_path):
     df.to_csv(output_path, index=False)
@@ -69,6 +73,129 @@ def save_metrics(actual, predicted, output_path):
 def Predict(tree, data):
     return tree.predict(data)
 
+
+## Defining the node class for the decision tree:
+# Creating a binary tree, where the test.conditions (as seen in Slide 34 of Lecture 5 & 6)
+# are stored in 'self.categories' (so that if a node contains those categories)
+# The node label is stored in self.value
+class TreeNode:
+    def __init__(self, feature_index=None, categories=None, left=None, right=None, *, value=None):
+        self.feature_index = feature_index  # Feature index used for the split
+        self.categories = categories        # Categories that go to the left node (binary split)
+        self.left = left
+        self.right = right
+        self.value = value  # If the node is a leaf, this holds the class label
+
+class DecisionTreeClassifierBinary:
+    def __init__(self, max_depth=None, min_samples_split=2):
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.root = None
+
+    def gini_impurity(self, y):
+        """Calculate the Gini Impurity for a list of class labels."""
+        n_samples = len(y)
+        if n_samples == 0:
+            return 0
+        unique_labels, counts = np.unique(y, return_counts=True)
+        probabilities = counts / n_samples
+        return 1.0 - np.sum(probabilities ** 2)
+    
+    def entropy(self, y):
+        """Calculate the entropy for a list of class labels."""
+        n_samples = len(y)
+        if n_samples == 0:
+            return 0
+        unique_labels, counts = np.unique(y, return_counts=True)
+        probabilities = counts / n_samples
+        return -np.sum(probabilities * np.log(probabilities))
+
+    def split_dataset(self, X, y, feature_index, categories):
+        """Split the dataset into two subsets based on the given feature and categories (binary split)."""
+        left_indices = np.isin(X[:, feature_index], categories)  # Left node for categories in the group
+        right_indices = ~left_indices # Right node all other categories
+        return X[left_indices], X[right_indices], y[left_indices], y[right_indices]
+
+    def best_split(self, X, y):
+        """Find the best binary split for categorical features."""
+        n_samples, n_features = X.shape
+        best_gini = float('inf')
+        best_feature_index = None
+        best_categories = None
+        best_splits = None
+
+        for feature_index in range(n_features):
+            # Get all unique categories for the current feature
+            categories = np.unique(X[:, feature_index])
+
+            # We need to find the best binary split of categories
+            # Generate all possible binary splits (groupings) of categories
+            if len(categories) > 1:  # Only need to split if there is more than one category
+                for group_size in range(1, len(categories)):
+                    for left_categories in combinations(categories, group_size):
+                        X_left, X_right, y_left, y_right = self.split_dataset(X, y, feature_index, left_categories)
+                        
+                        if len(y_left) == 0 or len(y_right) == 0:
+                            continue
+
+                        # Calculate the weighted Gini Impurity
+                        gini_left = self.gini_impurity(y_left)
+                        gini_right = self.gini_impurity(y_right)
+                        weighted_gini = (len(y_left) / n_samples) * gini_left + (len(y_right) / n_samples) * gini_right
+
+                        if weighted_gini < best_gini:
+                            best_gini = weighted_gini
+                            best_feature_index = feature_index
+                            best_categories = left_categories
+                            best_splits = (X_left, X_right, y_left, y_right)
+
+        return best_feature_index, best_categories, best_splits
+
+    def fit(self, X, y, depth=0):
+        # This function builds the tree recursively, similar to the algorithm in the slides
+        n_samples, n_features = X.shape
+        n_labels = len(np.unique(y))
+
+        # Stopping conditions: If all the instances in the node are of one label
+        # Or if all the attributes/features in the data have been exhausted
+        # Or if the self-specified 'maximum depth' of the tree has been reached
+        if (self.max_depth is not None and depth >= self.max_depth) or n_labels == 1 or n_samples < self.min_samples_split:
+            leaf_value = self.most_common_label(y)
+            return TreeNode(value=leaf_value)
+
+        # Finding the best split
+        feature_index, categories, splits = self.best_split(X, y)
+        if splits is None:
+            leaf_value = self.most_common_label(y)
+            return TreeNode(value=leaf_value)
+
+        X_left, X_right, y_left, y_right = splits
+
+        # Create subtrees recursively
+        left_subtree = self.fit(X_left, y_left, depth + 1)
+        right_subtree = self.fit(X_right, y_right, depth + 1)
+
+        return TreeNode(feature_index, categories, left_subtree, right_subtree)
+
+    def predict(self, X):
+        # Recursively finding the class label for instances (sample of the entire dataset) in x
+        return np.array([self._traverse_tree(sample, self.root) for sample in X])
+
+    def _traverse_tree(self, x, node):
+        if node.value is not None:
+            return node.value
+
+        feature_value = x[node.feature_index]
+        if feature_value in node.categories:
+            return self._traverse_tree(x, node.left)
+        else:
+            return self._traverse_tree(x, node.right)
+
+    def most_common_label(self, y):
+        # Find most common label in a sample for a given node
+        counts = Counter(y)
+        return counts.most_common(1)[0][0]
+
 if __name__ == "__main__":
     
     # This function parses the command line arguments, in the exact format specified.
@@ -84,6 +211,7 @@ if __name__ == "__main__":
     # Load saved model from path
     model_data = load_model(args.model_path)
     tree  = model_data['tree']
+    classifier = model_data['classifier']
     columns = model_data['columns']
 
     # Load data from the specified path

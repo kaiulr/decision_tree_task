@@ -10,11 +10,7 @@ from pathlib import Path
 
 def preprocessing(input_dir, output_dir):
     df = pd.read_csv(input_dir)
-<<<<<<< HEAD
-    # df=df.sample(n=800000, random_state=0)
-=======
     df=df.sample(n=800000, random_state=0)
->>>>>>> d329e38f8a42dbcd1cea8407929d7e6928712078
 
     ## Checking missing values and dtypes
     null_cells = df.isnull().sum()

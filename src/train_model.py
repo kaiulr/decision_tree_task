@@ -147,10 +147,12 @@ we=we.astype(np.float64)
 X = we[:, 1:]
 y = we[:, 1]
 
-trainx = we[:599999, 1:] # Input matrix of all features
-trainy = we[:599999, 0] # Output vector of 'isFraud'
-testx = we[600000:, 1:]
-testy = we[600000:, 0]
+split_index = int(np.ceil(len(X)*0.8))
+
+trainx = we[:split_index, 1:] # Input matrix of all features
+trainy = we[:split_index, 0] # Output vector of 'isFraud'
+testx = we[split_index+1:, 1:]
+testy = we[split_index+1:, 0]
 
 clf = DecisionTreeClassifierBinary(max_depth=5)
 clf.root = clf.fit(trainx, trainy)
@@ -277,7 +279,8 @@ def cross_validation(X, y, n_folds):
 
 model1_data = {
     'columns':keepcolumns,
-    'tree':clf
+    'classifier': DecisionTreeClassifierBinary,
+    'tree': clf
 }
 
 with open(os.path.join(model_dir, 'decision_tree_model1.pkl'), 'wb') as f:
