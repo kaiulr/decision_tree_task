@@ -9,9 +9,9 @@ from collections import Counter
 input_file = "C:/Users/Fiona/Desktop/Fiona_Arora_A1/decision_tree_task/fraud_train.csv"
 model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'models')
 output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data')
-# data_dir = preprocessing(input_file, output_dir)
-df = pd.read_csv(os.path.join(output_dir, "training_data.csv"))
-# df = pd.read_csv(data_dir)
+data_dir = preprocessing(input_file, output_dir)
+# df = pd.read_csv(os.path.join(output_dir, "training_data.csv"))
+df = pd.read_csv(data_dir)
 
 
 ## Defining the node class for the decision tree:
@@ -137,7 +137,7 @@ class DecisionTreeClassifierBinary:
         return counts.most_common(1)[0][0]
 
 
-keepcolumns = ['isFraud', 'coded_type', 'transaction_10mn', 'amount_is_delta','3_hour_step']
+keepcolumns = ['isFraud', 'coded_type','transaction_10mn', 'orig_delta_split','amount_is_delta', '3_hour_step']
 df = df[keepcolumns]
 
 we=df.to_numpy()

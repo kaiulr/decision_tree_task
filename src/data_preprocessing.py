@@ -76,7 +76,7 @@ def preprocessing(input_dir, output_dir):
 
     number_of_bins = 10
     bins = np.linspace(min_value, max_value, number_of_bins + 1)
-    df['orig_delta_split'] = pd.cut(df['orig_delta'], bins=bins, include_lowest=True)
+    df['orig_delta_split'] = pd.cut(df['orig_delta'], bins=bins, labels=[i for i in range(1,11)], include_lowest=True)
 
     # Dest_Delta
     min_value = df['dest_delta'].min()
@@ -84,15 +84,15 @@ def preprocessing(input_dir, output_dir):
 
     number_of_bins = 10
     bins = np.linspace(min_value, max_value, number_of_bins + 1)
-    df['dest_delta_split'] = pd.cut(df['dest_delta'], bins=bins, include_lowest=True)
+    df['dest_delta_split'] = pd.cut(df['dest_delta'], bins=bins, labels=[i for i in range(1,11)], include_lowest=True)
 
     # Amount
-    min_value = df['dest_delta'].min()
-    max_value = df['dest_delta'].max()
+    min_value = df['amount'].min()
+    max_value = df['amount'].max()
 
     number_of_bins = 10
     bins = np.linspace(min_value, max_value, number_of_bins + 1)
-    df['dest_delta_split'] = pd.cut(df['dest_delta'], bins=bins, include_lowest=True)
+    df['amount_split'] = pd.cut(df['amount'], bins=bins, labels=[i for i in range(1,11)], include_lowest=True)
 
     ## Transforming the 'step' variable
 
@@ -108,13 +108,6 @@ def preprocessing(input_dir, output_dir):
     df['3_hour_step'] = df['step'].apply(lambda x: map_to_interval(x, 3))
     df['6_hour_step'] = df['step'].apply(lambda x: map_to_interval(x, 6))
     df['12_hour_step'] = df['step'].apply(lambda x: map_to_interval(x, 12))
-
-    # 1-hour step binary
-    df['1_hour_step_binary'] = np.where(df['1_hour_step']<=10, True, False)
-
-    # Type binary
-    df['type_binary'] = np.where(df['type'].isin(['CASH_OUT','TRANSFER']), True, False)
-
 
     df.to_csv(os.path.join(output_dir, 'training_data.csv'), index=False)
     print(f"Processed data saved to '{os.path.join(output_dir, 'training_data.csv')}'")
