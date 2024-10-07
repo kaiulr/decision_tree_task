@@ -67,8 +67,7 @@ def preprocessing(input_dir, output_dir):
 
     ## Converting numeric data into categories (bucketing values)
     # Splitting the 'amount' and account balance deltas into 5 equal buckets
-    # Using pd.qcut instead of pd.cut to ensure equal bin depth
-    # Dropping duplicates since bins need to be entirely unique for decision trees to be able to parse through the bins
+    # No longer using pd.qcut instead of pd.cut to ensure equal bin depth
 
     # Orig_Delta
     min_value = df['orig_delta'].min()

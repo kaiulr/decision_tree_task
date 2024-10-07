@@ -9,9 +9,9 @@ from collections import Counter
 input_file = "C:/Users/Fiona/Desktop/Fiona_Arora_A1/decision_tree_task/fraud_train.csv"
 model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'models')
 output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data')
-data_dir = preprocessing(input_file, output_dir)
-# df = pd.read_csv(os.path.join(output_dir, "training_data.csv"))
-df = pd.read_csv(data_dir)
+# data_dir = preprocessing(input_file, output_dir)
+df = pd.read_csv(os.path.join(output_dir, "training_data.csv"))
+# df = pd.read_csv(data_dir)
 
 
 ## Defining the node class for the decision tree:
@@ -24,7 +24,7 @@ class TreeNode:
         self.categories = categories        # Categories that go to the left node (binary split)
         self.left = left
         self.right = right
-        self.value = value  # If the node is a leaf, this holds the class label
+        self.value = value  # If the node is a leaf, this holds the class label (value)
 
 class DecisionTreeClassifierBinary:
     def __init__(self, max_depth=None, min_samples_split=2):
@@ -83,7 +83,7 @@ class DecisionTreeClassifierBinary:
                         gini_right = self.gini_impurity(y_right)
                         weighted_gini = (len(y_left) / n_samples) * gini_left + (len(y_right) / n_samples) * gini_right
 
-                        if weighted_gini < best_gini:
+                        if weighted_gini < best_gini: # Minimize the gini impurity
                             best_gini = weighted_gini
                             best_feature_index = feature_index
                             best_categories = left_categories
@@ -137,17 +137,13 @@ class DecisionTreeClassifierBinary:
         return counts.most_common(1)[0][0]
 
 
-keepcolumns = ['isFraud', 'coded_type','transaction_10mn', 'orig_delta_split','amount_is_delta', '3_hour_step']
+keepcolumns = ['isFraud','coded_type','transaction_10mn', 'fully_depleted','orig_delta_split','amount_is_delta', '3_hour_step']
 df = df[keepcolumns]
 
 we=df.to_numpy()
 we=we.astype(np.float64)
 X = we[:, 1:]
 y = we[:, 0]
-print(y)
-print(X)
-print(we)
-print(df)
 
 split_index = int(np.ceil(len(X)*0.8))
 
@@ -277,7 +273,7 @@ def cross_validation(X, y, n_folds):
 
     return accuracy_list, precision_list, recall_list, f1_list
     
-# cross_validation(X, y, 10)
+# a, b, c, d = cross_validation(X, y, 10)
 
 model1_data = {
     'columns':keepcolumns,
