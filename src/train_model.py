@@ -21,70 +21,86 @@ df = pd.read_csv(os.path.join(output_dir, "training_data.csv"))
 class TreeNode:
     def __init__(self, feature_index=None, categories=None, left=None, right=None, *, value=None):
         self.feature_index = feature_index  # Feature index used for the split
-        self.categories = categories        # Categories that go to the left node (binary split)
+        self.categories = categories # Categories that go to the left node (binary split)
         self.left = left
         self.right = right
-        self.value = value  # If the node is a leaf, this holds the class label (value)
+        self.value = value  # If the node is a leaf, this holds the class label
 
 class DecisionTreeClassifierBinary:
-    def __init__(self, max_depth=None, min_samples_split=2):
+    def __init__(self, max_depth=None, min_samples_split=2, min_samples_leaf=1, min_impurity_decrease=0.0, max_features=None):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_impurity_decrease = min_impurity_decrease # To reduce overfitting
+        self.max_features = max_features
         self.root = None
 
-    def gini_impurity(self, y):
-        """Calculate the Gini Impurity for a list of class labels."""
+    def gini_impurity(self, y): # Calculates gini impurity based on formula seen in class
         n_samples = len(y)
         if n_samples == 0:
             return 0
         unique_labels, counts = np.unique(y, return_counts=True)
         probabilities = counts / n_samples
         return 1.0 - np.sum(probabilities ** 2)
-    
-    def entropy(self, y):
-        """Calculate the entropy for a list of class labels."""
+
+    def information_gain_gini(self, y, y_left, y_right): # Using formula from slides
+        # Calculate the Gini impurity of the current node (parent)
+        parent_gini = self.gini_impurity(y)
+
+        # Calculate the weighted average Gini impurity of the child nodes
         n_samples = len(y)
+        n_left = len(y_left)
+        n_right = len(y_right)
+
         if n_samples == 0:
             return 0
-        unique_labels, counts = np.unique(y, return_counts=True)
-        probabilities = counts / n_samples
-        return -np.sum(probabilities * np.log(probabilities))
 
-    def split_dataset(self, X, y, feature_index, categories):
-        """Split the dataset into two subsets based on the given feature and categories (binary split)."""
+        weighted_gini = (n_left / n_samples) * self.gini_impurity(y_left) + (n_right / n_samples) * self.gini_impurity(y_right)
+
+        # Information gain is the difference between the parent Gini impurity and the weighted average child Gini impurity
+        return parent_gini - weighted_gini
+
+    def split_dataset(self, X, y, feature_index, categories): # Splitting instances (binary)
         left_indices = np.isin(X[:, feature_index], categories)  # Left node for categories in the group
-        right_indices = ~left_indices # Right node all other categories
+        right_indices = ~left_indices  # Right node all other categories
         return X[left_indices], X[right_indices], y[left_indices], y[right_indices]
 
-    def best_split(self, X, y):
-        """Find the best binary split for categorical features."""
+    def best_split(self, X, y): # Finding the best split, recursively, using information gain (as opposed to Gini)
         n_samples, n_features = X.shape
-        best_gini = float('inf')
+        best_gain = -float('inf')
         best_feature_index = None
         best_categories = None
         best_splits = None
 
-        for feature_index in range(n_features):
+        # Updated code: allow for non-deterministic tree by randomly selecting features from the provided dataset.
+        # Two features ('fully_depleted' and 'transaction_10mn' are very strongly correlated with the target in our case, so this is optional.
+        
+        if self.max_features:
+            features = np.random.choice(range(n_features), self.max_features, replace=False)
+        else:
+            features = range(n_features)
+
+        for feature_index in features:
             # Get all unique categories for the current feature
             categories = np.unique(X[:, feature_index])
 
-            # We need to find the best binary split of categories
-            # Generate all possible binary splits (groupings) of categories
+            # Finding the best binary split based on information gain
+            # Generate all possible binary splits (groupings) of categories using combinations library
             if len(categories) > 1:  # Only need to split if there is more than one category
                 for group_size in range(1, len(categories)):
                     for left_categories in combinations(categories, group_size):
                         X_left, X_right, y_left, y_right = self.split_dataset(X, y, feature_index, left_categories)
-                        
-                        if len(y_left) == 0 or len(y_right) == 0:
+
+                        # Overfitting - ensure minimum samples per leaf requirement
+                        if len(y_left) < self.min_samples_leaf or len(y_right) < self.min_samples_leaf:
                             continue
 
-                        # Calculate the weighted Gini Impurity
-                        gini_left = self.gini_impurity(y_left)
-                        gini_right = self.gini_impurity(y_right)
-                        weighted_gini = (len(y_left) / n_samples) * gini_left + (len(y_right) / n_samples) * gini_right
+                        # Calculating the information gain using Gini impurity for the split
+                        gain = self.information_gain_gini(y, y_left, y_right)
 
-                        if weighted_gini < best_gini: # Minimize the gini impurity
-                            best_gini = weighted_gini
+                        # Update the best split if the current gain is higher
+                        if gain > best_gain and gain >= self.min_impurity_decrease:
+                            best_gain = gain
                             best_feature_index = feature_index
                             best_categories = left_categories
                             best_splits = (X_left, X_right, y_left, y_right)
@@ -96,9 +112,7 @@ class DecisionTreeClassifierBinary:
         n_samples, n_features = X.shape
         n_labels = len(np.unique(y))
 
-        # Stopping conditions: If all the instances in the node are of one label
-        # Or if all the attributes/features in the data have been exhausted
-        # Or if the self-specified 'maximum depth' of the tree has been reached
+        # Stopping conditions
         if (self.max_depth is not None and depth >= self.max_depth) or n_labels == 1 or n_samples < self.min_samples_split:
             leaf_value = self.most_common_label(y)
             return TreeNode(value=leaf_value)
@@ -132,7 +146,7 @@ class DecisionTreeClassifierBinary:
             return self._traverse_tree(x, node.right)
 
     def most_common_label(self, y):
-        # Find most common label in a sample for a given node
+        # Find most common label in a sample for a given node (counts based - whichever label is most prevalent)
         counts = Counter(y)
         return counts.most_common(1)[0][0]
 
@@ -275,12 +289,12 @@ def cross_validation(X, y, n_folds):
     
 # a, b, c, d = cross_validation(X, y, 10)
 
-model1_data = {
+final_data = {
     'columns':keepcolumns,
     'tree': clf
 }
 
-with open(os.path.join(model_dir, 'decision_tree_model1.pkl'), 'wb') as f:
-    pickle.dump(model1_data, f)
+with open(os.path.join(model_dir, 'decision_tree_model_final.pkl'), 'wb') as f:
+    pickle.dump(final_data, f)
 
-print("Model saved to 'decision_tree_model1.pkl'")
+print("Model saved to 'decision_tree_model_final.pkl'")

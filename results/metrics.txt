@@ -1,8 +1,0 @@
-Classification Metrics:
-Accuracy: 0.9999970530972929
-Precision: 1.0
-Recall: 0.9976833976833976
-F1-Score: 0.9988403556242752
-Confusion Matrix:
-[[[1016723], [0]],
-[[3], [1292]]]
