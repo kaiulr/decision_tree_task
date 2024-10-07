@@ -154,10 +154,10 @@ trainy = we[:split_index, 0] # Output vector of 'isFraud'
 testx = we[split_index+1:, 1:]
 testy = we[split_index+1:, 0]
 
-clf = DecisionTreeClassifierBinary(max_depth=5)
-clf.root = clf.fit(trainx, trainy)
+# clf = DecisionTreeClassifierBinary(max_depth=5)
+# clf.root = clf.fit(trainx, trainy)
 
-predictions = clf.predict(testx)
+# predictions = clf.predict(testx)
 
 ## Defining functions to find all important decision tree metrics
 # Accuracy = TP+TN / TP+TN+FN+FP

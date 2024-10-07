@@ -10,7 +10,7 @@ from pathlib import Path
 
 def preprocessing(input_dir, output_dir):
     df = pd.read_csv(input_dir)
-    df=df.sample(n=800000, random_state=0)
+    # df=df.sample(n=800000, random_state=0)
 
     ## Checking missing values and dtypes
     null_cells = df.isnull().sum()
@@ -38,8 +38,14 @@ def preprocessing(input_dir, output_dir):
 
     # Selecting features:
     # print("Deleting highly branched column to avoid overfitting.")
-    # df = df.drop(columns=['nameDest','nameOrig'])
+    df = df.drop(columns=['nameDest','nameOrig','isFlaggedFraud'])
 
+    # Creating feature on whether account value was depleted to 0
+    df['fully_depleted'] = np.where(df['amount'] == df['oldbalanceOrig'], True, False)
+
+    # Based on the data exploration, 100% of the fraudulent transactions seem to concentrated in 'CASH_OUT,' 'CASH_IN,' and 'TRANSFER'
+    # Creating a new feature that distinguishes between these 
+    df['12_hour_step']
     ## The below preprocessing was done after the exploration revealed high correlation within IVs
     # To glean other information from the highly correlated variables (oldbalorg, newbalorg and oldbaldest, newbaldest)
     # Finding differences (which should be equal to the 'amount' column)
@@ -50,6 +56,10 @@ def preprocessing(input_dir, output_dir):
     # Destination a/c - New - Old Balance
     df['dest_delta'] = df['oldbalanceDest']-df['newbalanceDest']
 
+    # Creating feature for if amount transacted was 10,000,000 and the transaction type was 'transfer'
+    # And if destination balance remained unchanged
+    df['transaction_10mn'] = np.where(((df['amount']==10000000) & (df['type']=='TRANSFER') & (df['dest_delta']==0)), True, False)
+ 
     ## Experimenting with a variable that checks if the 'amount' column and account balance changes are similar
     # As opposed to conditioning on each type of transaction, checking if either of the deltas (orig and dest) are equal to the amount.
     df['amount_is_delta'] = df.amount==np.abs(df.orig_delta)
