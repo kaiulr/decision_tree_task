@@ -211,7 +211,6 @@ if __name__ == "__main__":
     # Load saved model from path
     model_data = load_model(args.model_path)
     tree  = model_data['tree']
-    classifier = model_data['classifier']
     columns = model_data['columns']
 
     # Load data from the specified path
@@ -222,12 +221,12 @@ if __name__ == "__main__":
     processed_data_dir = preprocessing(args.data_path, output_dir)
     data = pd.read_csv(processed_data_dir)
     
-    # Splitting the features and output variable (fuel consumption)
+    # Splitting the features and output variable (isFraud)
     data = data[columns]
     we=data.to_numpy()
     we=we.astype(np.float64)
     X = we[:, 1:]
-    y = we[:, 1]
+    y = we[:, 0]
 
     # Make predictions
     predicted_values = Predict(tree, X)

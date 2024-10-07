@@ -43,9 +43,6 @@ def preprocessing(input_dir, output_dir):
     # Creating feature on whether account value was depleted to 0
     df['fully_depleted'] = np.where(df['amount'] == df['oldbalanceOrig'], True, False)
 
-    # Based on the data exploration, 100% of the fraudulent transactions seem to concentrated in 'CASH_OUT,' 'CASH_IN,' and 'TRANSFER'
-    # Creating a new feature that distinguishes between these 
-    df['12_hour_step']
     ## The below preprocessing was done after the exploration revealed high correlation within IVs
     # To glean other information from the highly correlated variables (oldbalorg, newbalorg and oldbaldest, newbaldest)
     # Finding differences (which should be equal to the 'amount' column)
@@ -73,14 +70,29 @@ def preprocessing(input_dir, output_dir):
     # Using pd.qcut instead of pd.cut to ensure equal bin depth
     # Dropping duplicates since bins need to be entirely unique for decision trees to be able to parse through the bins
 
-    df['orig_delta_split'] = pd.qcut(df['orig_delta'], 8, labels=[i for i in range(1,7)], retbins=False, precision=3, duplicates='drop')
-    df['dest_delta_split'] = pd.qcut(df['dest_delta'], 8, labels=[i for i in range(1,7)], retbins=False, precision=3, duplicates='drop')
+    # Orig_Delta
+    min_value = df['orig_delta'].min()
+    max_value = df['orig_delta'].max()
 
-    # Check how many buckets are actually created with qcut on amount
-    # Splitting qcut in 5 as opposed to 8 due to errors cropping up with 1
-    n = pd.qcut(df['amount'], 5, retbins=False, precision=1).nunique()
-    # Use this n to create labels for amount, since number of bins may be less than quantiles due to data distribution
-    df['amount_split'] = pd.qcut(df['amount'], 5, labels=[i for i in range(1,n+1)], retbins=False, precision=1, duplicates='drop')
+    number_of_bins = 10
+    bins = np.linspace(min_value, max_value, number_of_bins + 1)
+    df['orig_delta_split'] = pd.cut(df['orig_delta'], bins=bins, include_lowest=True)
+
+    # Dest_Delta
+    min_value = df['dest_delta'].min()
+    max_value = df['dest_delta'].max()
+
+    number_of_bins = 10
+    bins = np.linspace(min_value, max_value, number_of_bins + 1)
+    df['dest_delta_split'] = pd.cut(df['dest_delta'], bins=bins, include_lowest=True)
+
+    # Amount
+    min_value = df['dest_delta'].min()
+    max_value = df['dest_delta'].max()
+
+    number_of_bins = 10
+    bins = np.linspace(min_value, max_value, number_of_bins + 1)
+    df['dest_delta_split'] = pd.cut(df['dest_delta'], bins=bins, include_lowest=True)
 
     ## Transforming the 'step' variable
 
@@ -96,6 +108,13 @@ def preprocessing(input_dir, output_dir):
     df['3_hour_step'] = df['step'].apply(lambda x: map_to_interval(x, 3))
     df['6_hour_step'] = df['step'].apply(lambda x: map_to_interval(x, 6))
     df['12_hour_step'] = df['step'].apply(lambda x: map_to_interval(x, 12))
+
+    # 1-hour step binary
+    df['1_hour_step_binary'] = np.where(df['1_hour_step']<=10, True, False)
+
+    # Type binary
+    df['type_binary'] = np.where(df['type'].isin(['CASH_OUT','TRANSFER']), True, False)
+
 
     df.to_csv(os.path.join(output_dir, 'training_data.csv'), index=False)
     print(f"Processed data saved to '{os.path.join(output_dir, 'training_data.csv')}'")

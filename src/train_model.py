@@ -9,8 +9,9 @@ from collections import Counter
 input_file = "C:/Users/Fiona/Desktop/Fiona_Arora_A1/decision_tree_task/fraud_train.csv"
 model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'models')
 output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data')
-data_dir = preprocessing(input_file, output_dir)
-df = pd.read_csv(data_dir)
+# data_dir = preprocessing(input_file, output_dir)
+df = pd.read_csv(os.path.join(output_dir, "training_data.csv"))
+# df = pd.read_csv(data_dir)
 
 
 ## Defining the node class for the decision tree:
@@ -136,16 +137,17 @@ class DecisionTreeClassifierBinary:
         return counts.most_common(1)[0][0]
 
 
-# input_dir = os.path.join(os.path.dirname((os.path.abspath("")))) 
-# df = pd.read_csv(os.path.join(input_dir, 'data', 'training_data.csv'))
-
-keepcolumns = ['isFraud', 'coded_type', 'orig_delta_split', 'amount_is_delta','3_hour_step']
+keepcolumns = ['isFraud', 'coded_type', 'transaction_10mn', 'amount_is_delta','3_hour_step']
 df = df[keepcolumns]
 
 we=df.to_numpy()
 we=we.astype(np.float64)
 X = we[:, 1:]
-y = we[:, 1]
+y = we[:, 0]
+print(y)
+print(X)
+print(we)
+print(df)
 
 split_index = int(np.ceil(len(X)*0.8))
 
@@ -154,10 +156,10 @@ trainy = we[:split_index, 0] # Output vector of 'isFraud'
 testx = we[split_index+1:, 1:]
 testy = we[split_index+1:, 0]
 
-# clf = DecisionTreeClassifierBinary(max_depth=5)
-# clf.root = clf.fit(trainx, trainy)
+clf = DecisionTreeClassifierBinary(max_depth=5)
+clf.root = clf.fit(trainx, trainy)
 
-# predictions = clf.predict(testx)
+predictions = clf.predict(testx)
 
 ## Defining functions to find all important decision tree metrics
 # Accuracy = TP+TN / TP+TN+FN+FP
@@ -279,7 +281,6 @@ def cross_validation(X, y, n_folds):
 
 model1_data = {
     'columns':keepcolumns,
-    'classifier': DecisionTreeClassifierBinary,
     'tree': clf
 }
 
